@@ -23,11 +23,14 @@ def train():
             dec_inputs: [batch_size, tgt_len]
             dec_outputs: [batch_size, tgt_len]
             '''
-            enc_inputs, dec_inputs, dec_outputs = enc_inputs.to(
-                device), dec_inputs.to(device), dec_outputs.to(device)
-            # outputs: [batch_size * tgt_len, tgt_vocab_size]
+            enc_inputs = enc_inputs.to(device)
+            dec_inputs = dec_inputs.to(device)
+            dec_outputs = dec_outputs.to(device)
+            
             outputs, enc_self_attns, dec_self_attns, dec_enc_attns = transformer(
-                enc_inputs, dec_inputs)
+                enc_inputs, 
+                dec_inputs
+            )
             loss = criterion(outputs, dec_outputs.view(-1))
             print('Epoch:', '%04d' % (epoch + 1),
                   'loss =', '{:.6f}'.format(loss))

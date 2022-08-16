@@ -10,14 +10,14 @@ from torchsummary import summary
 from torch import optim
 from src.device import device
 from src.dataset import tgt_vocab_size, tgt_word_index, src_vocab_size, data_loader
+from src import config
 
-
-d_model = 512  # Embedding Size
-d_ff = 2048  # FeedForward dimension
-d_k = d_v = 64  # dimension of K(=Q), V
-n_layers = 6  # number of Encoder of Decoder Layer
-n_heads = 8  # number of heads in Multi-Head Attention
-
+d_model = config.d_model  # Embedding Size
+d_ff = config.d_ff  # FeedForward dimension
+d_k = config.d_k
+d_v = config.d_v  # dimension of K(=Q), V
+n_layers = config.n_layers  # number of Encoder of Decoder Layer
+n_heads = config.n_heads  # number of heads in Multi-Head Attention
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout=0.1, max_len=5000):

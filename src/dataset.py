@@ -6,18 +6,19 @@ import torch.utils.data as Data
 # E: Symbol that shows starting of decoding output
 # P: Symbol that will fill in blank sequence if current batch data size is short than time steps
 sentences = [
-    # enc_input           dec_input         dec_output
-    ['ich mochte ein bier P', 'S i want a beer .', 'i want a beer . E'],
-    ['ich mochte ein cola P', 'S i want a coke .', 'i want a coke . E']
+    # enc_input                 dec_input                dec_output
+    ['ich mochte ein bier <P>', '<sos> i want a beer .', 'i want a beer . <eos>'],
+    ['ich mochte ein cola <P>', '<sos> i want a coke .', 'i want a coke . <eos>']
 ]
 
 # Padding Should be Zero
-src_word_index = {'P': 0, 'ich': 1,
+src_word_index = {'<P>': 0, 'ich': 1,
                   'mochte': 2, 'ein': 3, 'bier': 4, 'cola': 5}
 src_vocab_size = len(src_word_index)
 
-tgt_word_index = {'P': 0, 'i': 1, 'want': 2, 'a': 3,
-                  'beer': 4, 'coke': 5, 'S': 6, 'E': 7, '.': 8}
+tgt_word_index = {'<P>': 0, 'i': 1, 'want': 2, 'a': 3,
+                  'beer': 4, 'coke': 5, '<sos>': 6, '<eos>': 7, '.': 8}
+src_index_word = {i: w for i, w in enumerate(src_word_index)}
 tgt_index_word = {i: w for i, w in enumerate(tgt_word_index)}
 tgt_vocab_size = len(tgt_word_index)
 
