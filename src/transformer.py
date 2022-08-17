@@ -1,16 +1,14 @@
 import torch
 import torch.nn as nn
-import torchvision.models as models
 import torch.nn.functional as F
 import torch.utils.data as Data
 import numpy as np
 import math
 import os
-from torchsummary import summary
 from torch import optim
 from src.device import device
-from src.dataset import tgt_vocab_size, tgt_word_index, src_vocab_size, data_loader
 from src import config
+
 
 d_model = config.d_model  # Embedding Size
 d_ff = config.d_ff  # FeedForward dimension
@@ -18,6 +16,7 @@ d_k = config.d_k
 d_v = config.d_v  # dimension of K(=Q), V
 n_layers = config.n_layers  # number of Encoder of Decoder Layer
 n_heads = config.n_heads  # number of heads in Multi-Head Attention
+
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout=0.1, max_len=5000):
@@ -167,10 +166,10 @@ class EncoderLayer(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, src_vocab_size):
         super(Encoder, self).__init__()
         self.src_emb = nn.Embedding(src_vocab_size, d_model)
-        self.pos_emb = PositionalEncoding(d_model)
+        self.pos_emb = PositionalEncoding(d_model, max_len=config.src_max_len)
         self.layers = nn.ModuleList([EncoderLayer() for _ in range(n_layers)])
 
     def forward(self, enc_inputs):
@@ -217,10 +216,11 @@ class DecoderLayer(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self):
+    def __init__(self, tgt_vocab_size):
         super(Decoder, self).__init__()
         self.tgt_emb = nn.Embedding(tgt_vocab_size, d_model)
-        self.pos_emb = PositionalEncoding(d_model)
+        # +1 because of <sos> for decorder input and <eos> for decoder output
+        self.pos_emb = PositionalEncoding(d_model, max_len=config.tgt_max_len+1)
         self.layers = nn.ModuleList([DecoderLayer() for _ in range(n_layers)])
 
     def forward(self, dec_inputs, enc_inputs, enc_outputs):
@@ -246,7 +246,9 @@ class Decoder(nn.Module):
 
         dec_self_attns, dec_enc_attns = [], []
         for layer in self.layers:
-            # dec_outputs: [batch_size, tgt_len, d_model], dec_self_attn: [batch_size, n_heads, tgt_len, tgt_len], dec_enc_attn: [batch_size, h_heads, tgt_len, src_len]
+            # dec_outputs: [batch_size, tgt_len, d_model], dec_self_attn: [batch_size,
+            # n_heads, tgt_len, tgt_len], dec_enc_attn: [batch_size, h_heads, tgt_len,
+            # src_len]
             dec_outputs, dec_self_attn, dec_enc_attn = layer(
                 dec_outputs, enc_outputs, dec_self_attn_mask, dec_enc_attn_mask)
             dec_self_attns.append(dec_self_attn)
@@ -255,10 +257,10 @@ class Decoder(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self):
+    def __init__(self, src_vocab_size , tgt_vocab_size):
         super(Transformer, self).__init__()
-        self.encoder = Encoder().to(device)
-        self.decoder = Decoder().to(device)
+        self.encoder = Encoder(src_vocab_size).to(device)
+        self.decoder = Decoder(tgt_vocab_size).to(device)
         self.projection = nn.Linear(
             d_model, tgt_vocab_size, bias=False
         ).to(device)
@@ -273,7 +275,9 @@ class Transformer(nn.Module):
 
         # enc_outputs: [batch_size, src_len, d_model], enc_self_attns: [n_layers, batch_size, n_heads, src_len, src_len]
         enc_outputs, enc_self_attns = self.encoder(enc_inputs)
-        # dec_outpus: [batch_size, tgt_len, d_model], dec_self_attns: [n_layers, batch_size, n_heads, tgt_len, tgt_len], dec_enc_attn: [n_layers, batch_size, tgt_len, src_len]
+        # dec_outpus: [batch_size, tgt_len, d_model], dec_self_attns: [n_layers,
+        # batch_size, n_heads, tgt_len, tgt_len], dec_enc_attn: [n_layers,
+        # batch_size, tgt_len, src_len]
         dec_outputs, dec_self_attns, dec_enc_attns = self.decoder(
             dec_inputs, enc_inputs, enc_outputs)
         # dec_logits: [batch_size, tgt_len, tgt_vocab_size]

@@ -23,13 +23,13 @@ def main():
         enc_input = enc_inputs[i]
         sentence = " ".join([src_index_word[i.item()] for i in enc_input])
         print("source sentence:", sentence)
-        predict = translator.translate(
+        predict = translator.translate_input_index(
             enc_input.unsqueeze(0),  # expand as batch
-            start_index=tgt_word_index["<sos>"]
+            src_start_index=tgt_word_index["<sos>"]
         )
         print(enc_input, '->', [tgt_index_word[n.item()]
                                     for n in predict.squeeze()])
 
 
 if __name__ == "__main__":
-    main()
+    train(epochs=30, use_saved_vocab=True)
