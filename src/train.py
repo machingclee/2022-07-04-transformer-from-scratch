@@ -16,7 +16,11 @@ from src.visualize import visualize
 
 console_log = ConsoleLog(lines_up_on_end=1)
 
-def train(epochs=10, use_saved_vocab=False):
+def train(
+    epochs=10, 
+    use_saved_vocab=False,
+    learning_rate=1e-3
+):
     if use_saved_vocab:
         vocabs = Vocabs(src_vocab_pickle_path="src.pickle", tgt_vocab_pickle_path="tgt.pickle")
         corpus = Corpus(src_vocab=vocabs.get_src_vocab(), tgt_vocab=vocabs.get_tgt_vocab())
@@ -33,7 +37,7 @@ def train(epochs=10, use_saved_vocab=False):
     ).to(device)
     
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    optimizer = optim.SGD(transformer.parameters(), lr=1e-4, momentum=0.99)
+    optimizer = optim.Adamax(transformer.parameters(), lr=learning_rate)
     dataset = TransformerDataset(corpus)
     data_loader = DataLoader(dataset=dataset,
                              batch_size=config.batch_size,
@@ -63,7 +67,7 @@ def train(epochs=10, use_saved_vocab=False):
                 console_log.print([
                     ("loss", loss.item())
                 ])
-                if batch_id % 10 == 0:
+                if batch_id % config.visualize_result_per_epochs == 0:
                     visualize(transformer, 
                               enc_inputs[0], 
                               src_vocabs, 
